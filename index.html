@@ -1,0 +1,1111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🍽️ 前叉术后饮食计划 · Notion兼容版</title>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
+    <style>
+        * { box-sizing: border-box; font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; margin: 0; padding: 0; }
+        body { background: #f5f7fb; padding: 1.5rem; min-height: 100vh; display: flex; justify-content: center; align-items: flex-start; }
+        .app { max-width: 1700px; width: 100%; background: white; border-radius: 2rem; box-shadow: 0 20px 40px rgba(0,0,0,0.05), 0 8px 16px rgba(0,0,0,0.02); padding: 1.8rem 1.8rem 2rem; border: 1px solid #eef2f6; }
+        h1 { display: flex; align-items: center; gap: 0.6rem; font-weight: 600; font-size: 1.9rem; color: #0b1e33; margin-bottom: 0.25rem; }
+        .subhead { color: #4b5e77; font-size: 0.9rem; margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; border-bottom: 1px solid #e2e8f0; padding-bottom: 0.9rem; }
+        .layout { display: flex; gap: 1.8rem; align-items: flex-start; }
+        .plan-area { flex: 1; min-width: 0; overflow-x: auto; }
+
+        .week-grid { display: grid; grid-template-columns: 70px 150px repeat(3, 1fr); gap: 10px; background: transparent; min-width: 950px; }
+        .header-cell { font-weight: 600; font-size: 0.95rem; color: #1e293b; background: #f1f5f9; padding: 0.8rem 0.3rem; text-align: center; border-radius: 12px; display: flex; align-items: center; justify-content: center; gap: 0.3rem; }
+        .day-label { font-weight: 600; font-size: 0.9rem; color: #334155; background: #f8fafc; padding: 1rem 0.2rem; text-align: center; border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.2rem; border: 1px solid #eef2f6; }
+
+        .day-nutri-card { background: #f0f7ff; border: 1px solid #dbeafe; border-radius: 14px; padding: 0.5rem 0.5rem; display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.68rem; transition: background 0.1s; }
+        .day-nutri-card .nutri-line { display: flex; justify-content: space-between; color: #475569; }
+        .day-nutri-card .nutri-line .v { font-weight: 600; color: #0f172a; }
+        .day-nutri-card .nutri-head { font-size: 0.65rem; color: #3b82f6; font-weight: 600; text-align: center; margin-bottom: 0.1rem; }
+
+        .grid-cell { background: #ffffff; border: 1px solid #e9eef3; border-radius: 14px; padding: 0.7rem 0.6rem; min-height: 110px; display: flex; flex-direction: column; gap: 6px; transition: all 0.1s; box-shadow: 0 1px 3px rgba(0,0,0,0.02); cursor: pointer; }
+        .grid-cell.drag-over { background: #f0f7ff; border: 2px dashed #3b82f6; }
+        .grid-cell.selected { box-shadow: 0 0 0 3px #3b82f6, 0 2px 8px rgba(59,130,246,0.2); border-color: #3b82f6; }
+        .cell-items { display: flex; flex-direction: column; gap: 5px; flex: 1; }
+        .menu-item { background: #f9fcff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 0.5rem 0.7rem; display: flex; justify-content: space-between; align-items: center; cursor: grab; font-size: 0.83rem; font-weight: 500; color: #0f172a; transition: all 0.12s; box-shadow: 0 1px 2px rgba(0,0,0,0.02); word-break: break-word; user-select: none; }
+        .menu-item:active { cursor: grabbing; opacity: 0.6; }
+        .menu-item.dragging { opacity: 0.3; background: #eef2f6; border-style: dashed; }
+        .menu-item.drag-over { border-top: 3px solid #3b82f6; background: #eef6ff; }
+        .item-text { flex: 1; padding-right: 4px; }
+        .delete-btn { background: none; border: none; color: #94a3b8; font-size: 1rem; line-height: 1; cursor: pointer; padding: 0 4px; border-radius: 20px; transition: all 0.1s; flex-shrink: 0; }
+        .delete-btn:hover { background: #fee2e2; color: #b91c1c; }
+        .empty-hint { color: #b9c7d9; font-size: 0.75rem; font-style: italic; text-align: center; padding: 0.6rem 0; border: 1px dashed #d9e2ec; border-radius: 8px; background: #fcfdff; cursor: pointer; transition: background 0.1s; }
+        .empty-hint:hover { background: #f1f9ff; border-color: #94a3b8; }
+
+        .preset-area { width: 320px; flex-shrink: 0; background: #f8fafc; border-radius: 1.5rem; padding: 1.3rem 1rem; border: 1px solid #e9eef3; box-shadow: 0 4px 12px rgba(0,0,0,0.02); position: sticky; top: 1.5rem; max-height: calc(100vh - 3rem); display: flex; flex-direction: column; }
+        .preset-area h2 { font-size: 1rem; font-weight: 600; color: #1e293b; display: flex; align-items: center; justify-content: space-between; gap: 0.4rem; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 1px solid #dde3ea; }
+        .h2-btns { display: flex; gap: 0.3rem; }
+        .mini-btn { background: none; border: 1px dashed #cbd5e1; padding: 0.2rem 0.6rem; border-radius: 2rem; font-size: 0.7rem; font-weight: 500; color: #475569; cursor: pointer; transition: all 0.15s; }
+        .mini-btn:hover { background: #f1f5f9; border-color: #94a3b8; }
+        .category-tabs { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-bottom: 0.8rem; padding-bottom: 0.6rem; border-bottom: 1px solid #e9eef3; }
+        .category-tab { background: white; border: 1px solid #e2e8f0; border-radius: 2rem; padding: 0.25rem 0.7rem; font-size: 0.72rem; font-weight: 500; color: #475569; cursor: pointer; transition: all 0.15s; display: flex; align-items: center; gap: 0.3rem; user-select: none; }
+        .category-tab:hover { background: #f1f5f9; border-color: #94a3b8; }
+        .category-tab.active { background: #1e293b; color: white; border-color: #1e293b; }
+        .category-tab.recommend { border-color: #86efac; background: #f0fdf4; }
+        .category-tab.recommend.active { background: #16a34a; color: white; border-color: #16a34a; }
+        .category-tab.avoid { border-color: #fca5a5; background: #fef2f2; }
+        .category-tab.avoid.active { background: #dc2626; color: white; border-color: #dc2626; }
+        .category-tab .tab-count { font-size: 0.65rem; opacity: 0.7; }
+        .category-tab .tab-del { background: none; border: none; color: inherit; font-size: 0.7rem; cursor: pointer; padding: 0 2px; opacity: 0.5; line-height: 1; }
+        .category-tab .tab-del:hover { opacity: 1; color: #ef4444; }
+        .preset-list { display: flex; flex-direction: column; gap: 0.5rem; overflow-y: auto; padding-right: 4px; flex: 1; min-height: 100px; max-height: 480px; }
+        .preset-item { background: white; border: 1px solid #e2e8f0; border-radius: 40px; padding: 0.55rem 0.9rem; font-size: 0.83rem; font-weight: 500; color: #1e293b; transition: all 0.15s; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 1px 2px rgba(0,0,0,0.02); user-select: none; }
+        .preset-item .preset-text { flex: 1; cursor: pointer; display: flex; align-items: center; gap: 0.4rem; }
+        .preset-item .preset-text:hover { color: #3b82f6; }
+        .preset-item .preset-text span { color: #3b82f6; font-weight: 600; font-size: 1rem; }
+        .preset-item .delete-preset-btn { background: none; border: none; color: #94a3b8; font-size: 0.9rem; line-height: 1; cursor: pointer; padding: 0 4px; border-radius: 20px; transition: all 0.1s; flex-shrink: 0; margin-left: 6px; }
+        .preset-item .delete-preset-btn:hover { background: #fee2e2; color: #b91c1c; }
+        .preset-empty { color: #94a3b8; font-size: 0.8rem; text-align: center; padding: 1.5rem 0; font-style: italic; }
+        .preset-hint { font-size: 0.68rem; color: #6b7b8f; text-align: center; margin-top: 0.8rem; padding-top: 0.6rem; border-top: 1px solid #e2e8f0; flex-shrink: 0; }
+
+        .global-actions { display: flex; justify-content: flex-end; gap: 0.8rem; margin-top: 1.5rem; }
+        button { background: white; border: 1px solid #cbd5e1; padding: 0.5rem 1.2rem; border-radius: 3rem; font-weight: 500; font-size: 0.85rem; display: inline-flex; align-items: center; gap: 0.4rem; cursor: pointer; transition: all 0.2s; box-shadow: 0 1px 2px rgba(0,0,0,0.02); }
+        button:hover { background: #f1f5f9; border-color: #94a3b8; }
+        button.primary { background: #1e293b; color: white; border-color: #1e293b; }
+        button.primary:hover { background: #0f172a; }
+        .toast-message { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: #1e293b; color: white; padding: 8px 20px; border-radius: 40px; font-size: 0.85rem; opacity: 0; transition: opacity 0.2s; pointer-events: none; z-index: 1000; box-shadow: 0 8px 20px rgba(0,0,0,0.2); }
+        .toast-message.show { opacity: 1; }
+
+        .save-btn { background: #1890ff; color: #fff; border: none; border-radius: 6px; padding: 6px 14px; font-size: 0.8rem; font-weight: bold; cursor: pointer; white-space: nowrap; box-shadow: none; }
+        .save-btn:hover { background: #096dd9; border: none; }
+        .save-btn.saving { background: #91d5ff; cursor: wait; }
+        .sync-status { font-size: 0.72rem; color: #94a3b8; white-space: nowrap; }
+        .sync-status.ok { color: #16a34a; }
+        .sync-status.err { color: #dc2626; }
+
+        .recipe-section { margin-top: 2.5rem; padding-top: 1.8rem; border-top: 2px solid #eef2f6; }
+        .recipe-header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.8rem; margin-bottom: 1.2rem; }
+        .recipe-header h2 { font-size: 1.4rem; font-weight: 600; color: #0b1e33; display: flex; align-items: center; gap: 0.5rem; }
+        .recipe-header .recipe-actions { display: flex; gap: 0.6rem; flex-wrap: wrap; }
+        .recipe-toolbar { display: flex; gap: 0.6rem; margin-bottom: 1rem; flex-wrap: wrap; align-items: center; }
+        .recipe-search { flex: 1; min-width: 200px; padding: 0.55rem 1rem; border: 1px solid #cbd5e1; border-radius: 2rem; font-size: 0.85rem; outline: none; transition: all 0.15s; }
+        .recipe-search:focus { border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,0.15); }
+        .recipe-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem; }
+        .recipe-card { background: #ffffff; border: 1px solid #e9eef3; border-radius: 1.2rem; padding: 1.1rem 1.2rem; box-shadow: 0 2px 8px rgba(0,0,0,0.02); transition: all 0.15s; display: flex; flex-direction: column; gap: 0.5rem; }
+        .recipe-card:hover { box-shadow: 0 6px 20px rgba(0,0,0,0.06); transform: translateY(-2px); border-color: #dbeafe; }
+        .recipe-card .recipe-title { font-size: 1rem; font-weight: 600; color: #0f172a; display: flex; justify-content: space-between; align-items: flex-start; gap: 0.5rem; }
+        .recipe-card .recipe-title .title-text { flex: 1; word-break: break-word; }
+        .recipe-card .recipe-card-actions { display: flex; gap: 0.2rem; flex-shrink: 0; }
+        .recipe-card .icon-btn { background: none; border: none; color: #94a3b8; cursor: pointer; padding: 0.2rem 0.4rem; border-radius: 6px; font-size: 0.9rem; transition: all 0.1s; line-height: 1; }
+        .recipe-card .icon-btn:hover { background: #f1f5f9; color: #0f172a; }
+        .recipe-card .icon-btn.delete:hover { background: #fee2e2; color: #b91c1c; }
+        .recipe-card .recipe-tag { display: inline-block; background: #eff6ff; color: #2563eb; border-radius: 20px; padding: 0.1rem 0.5rem; font-size: 0.68rem; font-weight: 500; margin-bottom: 0.3rem; align-self: flex-start; }
+        .recipe-card .recipe-field { font-size: 0.8rem; color: #475569; line-height: 1.5; }
+        .recipe-card .recipe-field strong { color: #0f172a; font-weight: 600; }
+        .recipe-card .recipe-field.ingredients { color: #166534; }
+        .recipe-card .recipe-field.steps { color: #92400e; }
+        .recipe-card .recipe-field.ingredients strong { color: #15803d; }
+        .recipe-card .recipe-field.steps strong { color: #b45309; }
+        .recipe-card .recipe-notes { font-size: 0.75rem; color: #64748b; font-style: italic; padding-top: 0.4rem; border-top: 1px dashed #e2e8f0; }
+        .recipe-empty { text-align: center; color: #94a3b8; padding: 3rem 1rem; font-size: 0.9rem; background: #f8fafc; border-radius: 1.2rem; border: 2px dashed #e2e8f0; grid-column: 1 / -1; }
+        .recipe-empty .big-icon { font-size: 2.5rem; display: block; margin-bottom: 0.5rem; }
+
+        .modal-overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.4); backdrop-filter: blur(2px); display: none; align-items: center; justify-content: center; z-index: 999; padding: 1rem; }
+        .modal-overlay.show { display: flex; }
+        .modal { background: white; border-radius: 1.5rem; width: 100%; max-width: 600px; max-height: 90vh; display: flex; flex-direction: column; box-shadow: 0 25px 50px rgba(0,0,0,0.2); overflow: hidden; }
+        .modal-header { padding: 1.2rem 1.5rem; border-bottom: 1px solid #e9eef3; display: flex; justify-content: space-between; align-items: center; }
+        .modal-header h2 { font-size: 1.15rem; font-weight: 600; color: #0f172a; display: flex; align-items: center; gap: 0.5rem; }
+        .modal-close { background: none; border: none; font-size: 1.4rem; color: #94a3b8; cursor: pointer; padding: 0.2rem 0.5rem; border-radius: 0.5rem; }
+        .modal-close:hover { background: #f1f5f9; color: #0f172a; }
+        .modal-body { padding: 1.2rem 1.5rem; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 1rem; }
+        .form-group { display: flex; flex-direction: column; gap: 0.4rem; }
+        .form-group label { font-size: 0.8rem; font-weight: 600; color: #334155; }
+        .form-group input, .form-group textarea { width: 100%; padding: 0.6rem 0.9rem; border: 1px solid #cbd5e1; border-radius: 0.8rem; font-size: 0.85rem; font-family: inherit; outline: none; transition: all 0.15s; resize: vertical; }
+        .form-group input:focus, .form-group textarea:focus { border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,0.15); }
+        .form-group textarea { min-height: 80px; line-height: 1.5; }
+        .modal-footer { padding: 1rem 1.5rem; border-top: 1px solid #e9eef3; display: flex; justify-content: flex-end; gap: 0.6rem; }
+
+        .input-modal { max-width: 420px; }
+        .input-modal .modal-body { padding: 1.2rem 1.5rem; }
+        .input-modal input { width: 100%; padding: 0.7rem 1rem; border: 1px solid #cbd5e1; border-radius: 0.8rem; font-size: 0.95rem; outline: none; }
+        .input-modal input:focus { border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,0.15); }
+
+        .confirm-modal { max-width: 400px; }
+        .confirm-modal .modal-body { padding: 1.5rem; font-size: 0.9rem; color: #334155; line-height: 1.6; }
+
+        .loading-mask { position: fixed; inset: 0; background: rgba(255,255,255,0.85); display: flex; align-items: center; justify-content: center; font-size: 15px; color: #666; z-index: 2000; }
+
+        @media (max-width: 1200px) { .layout { flex-direction: column; } .preset-area { width: 100%; position: static; max-height: none; } .preset-list { flex-direction: row; flex-wrap: wrap; max-height: 200px; } .preset-item { flex: 1 0 auto; min-width: 130px; } }
+        @media (max-width: 700px) { .week-grid { grid-template-columns: 55px 120px repeat(3, minmax(90px, 1fr)); gap: 5px; min-width: 600px; } .grid-cell { min-height: 80px; padding: 0.4rem 0.4rem; } .menu-item { font-size: 0.72rem; padding: 0.35rem 0.45rem; } .day-nutri-card { font-size: 0.6rem; padding: 0.35rem 0.35rem; } .recipe-grid { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+<div id="loadingMask" class="loading-mask">☁️ 正在从云端加载数据...</div>
+
+<div class="app">
+    <h1><span>🦵</span> 前叉术后饮食计划</h1>
+    <div class="subhead">
+        <span>选中格子 → 点击预设添加 · 拖拽调整 · 每日营养自动显示</span>
+        <span style="display:flex; align-items:center; gap:0.6rem; flex-wrap:wrap;">
+            <span class="sync-status" id="syncStatus"></span>
+            <button id="saveBtn" class="save-btn" onclick="saveToCloud()">☁️ 保存到云端</button>
+            <span style="font-size:0.78rem; background:#fef3c7; padding:0.2rem 0.8rem; border-radius:20px; color:#92400e;">前叉韧带术后饮食参考</span>
+        </span>
+    </div>
+
+    <div class="layout">
+        <div class="plan-area">
+            <div class="week-grid" id="weekGrid"></div>
+            <div class="global-actions">
+                <button id="clearAllBtn">🧹 清空所有</button>
+                <button id="resetDefaultBtn" class="primary">🔄 恢复示例</button>
+            </div>
+        </div>
+
+        <div class="preset-area">
+            <h2>
+                <span><span>🥗</span> 预设菜单</span>
+                <div class="h2-btns">
+                    <button class="mini-btn" id="addPresetBtn">+ 添加</button>
+                </div>
+            </h2>
+            <div class="category-tabs" id="categoryTabs"></div>
+            <div class="preset-list" id="presetList"></div>
+            <div class="preset-hint">点击预设添加到选中格子 · 点击 ✕ 删除预设</div>
+        </div>
+    </div>
+
+    <div class="recipe-section">
+        <div class="recipe-header">
+            <h2><span>📖</span> 食谱集</h2>
+            <div class="recipe-actions">
+                <button id="addRecipeBtn" class="primary">+ 新建食谱</button>
+            </div>
+        </div>
+        <div class="recipe-toolbar">
+            <input type="text" class="recipe-search" id="recipeSearch" placeholder="🔍 搜索食谱名称、食材或做法...">
+            <button id="exportExcelBtn">📊 导出 Excel</button>
+            <button id="exportRecipeBtn">📤 导出 JSON</button>
+            <button id="importRecipeBtn">📥 导入 JSON</button>
+        </div>
+        <div class="recipe-grid" id="recipeGrid"></div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="recipeModal">
+    <div class="modal">
+        <div class="modal-header">
+            <h2 id="recipeModalTitle"><span>📝</span> 新建食谱</h2>
+            <button class="modal-close" id="closeRecipeModalBtn">✕</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label>食谱名称 *</label>
+                <input type="text" id="recipeName" placeholder="例如：清蒸鸡胸肉">
+            </div>
+            <div class="form-group">
+                <label>标签 / 分类</label>
+                <input type="text" id="recipeTag" placeholder="例如：术后建议 / 高蛋白 / 主食">
+            </div>
+            <div class="form-group">
+                <label>食材</label>
+                <textarea id="recipeIngredients" placeholder="例如：鸡胸肉 200g、姜片 3片、葱段 2根"></textarea>
+            </div>
+            <div class="form-group">
+                <label>做法步骤</label>
+                <textarea id="recipeSteps" placeholder="例如：1. 鸡胸肉洗净切片，用姜片、葱段腌制10分钟；2. 上锅蒸15分钟即可。"></textarea>
+            </div>
+            <div class="form-group">
+                <label>备注 / 营养提示</label>
+                <textarea id="recipeNotes" placeholder="例如：高蛋白低脂，适合术后修复；可搭配西兰花食用。"></textarea>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button id="cancelRecipeBtn">取消</button>
+            <button class="primary" id="saveRecipeBtn">保存食谱</button>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="inputModal">
+    <div class="modal input-modal">
+        <div class="modal-header">
+            <h2 id="inputModalTitle"><span>✏️</span> 输入</h2>
+            <button class="modal-close" id="closeInputModalBtn">✕</button>
+        </div>
+        <div class="modal-body">
+            <input type="text" id="inputModalField" placeholder="请输入...">
+        </div>
+        <div class="modal-footer">
+            <button id="cancelInputBtn">取消</button>
+            <button class="primary" id="confirmInputBtn">确定</button>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="confirmModal">
+    <div class="modal confirm-modal">
+        <div class="modal-header">
+            <h2 id="confirmModalTitle"><span>⚠️</span> 确认</h2>
+            <button class="modal-close" id="closeConfirmModalBtn">✕</button>
+        </div>
+        <div class="modal-body" id="confirmModalText">
+            确定要执行此操作吗？
+        </div>
+        <div class="modal-footer">
+            <button id="cancelConfirmBtn">取消</button>
+            <button class="primary" id="okConfirmBtn">确定</button>
+        </div>
+    </div>
+</div>
+
+<div id="toast" class="toast-message"></div>
+
+<script>
+    /* ============================================================
+       ⚠️ 只需修改下面两行，填入你自己的 JSONBin 信息
+       ============================================================ */
+    const BIN_ID = '6ac21630ac6210605a11d954';
+    const ACCESS_KEY = '$2a$10$cPKQXJcxTMqWQ3OzRKAy6OHzH0UON7nGYAdBina4LNznZzOkZ0HoG';
+    /* ============================================================ */
+
+    const API_URL = `https://api.jsonbin.io/v3/b/${BIN_ID}`;
+
+    (function() {
+        const DAYS = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
+        const MEALS = ['breakfast', 'lunch', 'dinner'];
+        const MEAL_LABELS = { breakfast: '早餐', lunch: '午餐', dinner: '晚餐' };
+
+        // ============ 预设数据 ============
+        let presetData = {
+            '✅ 术后建议': ['鸡胸肉','三文鱼','鸡蛋','希腊酸奶','牛奶','西兰花','菠菜','橙子','猕猴桃','蓝莓','糙米饭','燕麦粥','藜麦','红薯','豆腐','亚麻籽油','核桃','杏仁','牛肉','鳕鱼'],
+            '⚠️ 术后避免': ['炸鸡','薯条','肥肉','奶油蛋糕','含糖饮料','咖啡','浓茶','酒精饮品','腌制食品','辣椒'],
+            '主食': ['燕麦粥', '全麦面包', '糙米饭', '藜麦', '紫薯', '包子', '牛肉面', '饺子', '炒饭', '意面'],
+            '蛋白质': ['水煮蛋', '鸡胸肉沙拉', '三文鱼', '豆腐', '烤鸡腿', '煎蛋', '培根', '蛋白粉'],
+            '蔬菜': ['西兰花', '炒时蔬', '蔬菜汤', '沙拉', '番茄意面'],
+            '水果': ['牛油果', '水果拼盘', '橙子', '猕猴桃'],
+            '饮品': ['希腊酸奶', '拿铁', '牛奶', '豆浆'],
+            '其他': ['坚果', '亚麻籽油']
+        };
+
+        const NUTRIENT_DB = {
+            '鸡胸肉': { cal: 165, pro: 31, fat: 3.6, carb: 0, ca: 15, fe: 1.0, vc: 0 },
+            '三文鱼': { cal: 208, pro: 20, fat: 13, carb: 0, ca: 9, fe: 0.3, vc: 0 },
+            '鸡蛋': { cal: 155, pro: 13, fat: 11, carb: 1.1, ca: 50, fe: 1.2, vc: 0 },
+            '水煮蛋': { cal: 155, pro: 13, fat: 11, carb: 1.1, ca: 50, fe: 1.2, vc: 0 },
+            '希腊酸奶': { cal: 97, pro: 9, fat: 5, carb: 3.6, ca: 100, fe: 0.1, vc: 0 },
+            '牛奶': { cal: 61, pro: 3.2, fat: 3.3, carb: 4.8, ca: 113, fe: 0.1, vc: 1 },
+            '西兰花': { cal: 34, pro: 2.8, fat: 0.4, carb: 7, ca: 47, fe: 0.7, vc: 89 },
+            '菠菜': { cal: 23, pro: 2.9, fat: 0.4, carb: 3.6, ca: 99, fe: 2.7, vc: 28 },
+            '橙子': { cal: 47, pro: 0.9, fat: 0.1, carb: 12, ca: 40, fe: 0.1, vc: 53 },
+            '猕猴桃': { cal: 61, pro: 1.1, fat: 0.5, carb: 15, ca: 34, fe: 0.3, vc: 93 },
+            '蓝莓': { cal: 57, pro: 0.7, fat: 0.3, carb: 14, ca: 6, fe: 0.3, vc: 10 },
+            '糙米饭': { cal: 111, pro: 2.6, fat: 0.9, carb: 23, ca: 10, fe: 0.5, vc: 0 },
+            '燕麦粥': { cal: 71, pro: 2.5, fat: 1.5, carb: 12, ca: 10, fe: 0.8, vc: 0 },
+            '藜麦': { cal: 120, pro: 4.4, fat: 1.9, carb: 21, ca: 17, fe: 1.5, vc: 0 },
+            '红薯': { cal: 86, pro: 1.6, fat: 0.1, carb: 20, ca: 30, fe: 0.6, vc: 3 },
+            '紫薯': { cal: 82, pro: 1.4, fat: 0.2, carb: 19, ca: 25, fe: 0.5, vc: 2 },
+            '豆腐': { cal: 76, pro: 8, fat: 4.8, carb: 1.9, ca: 350, fe: 5.4, vc: 0 },
+            '亚麻籽油': { cal: 884, pro: 0, fat: 100, carb: 0, ca: 0, fe: 0, vc: 0 },
+            '核桃': { cal: 654, pro: 15, fat: 65, carb: 14, ca: 98, fe: 2.9, vc: 1 },
+            '杏仁': { cal: 579, pro: 21, fat: 50, carb: 22, ca: 269, fe: 3.7, vc: 0 },
+            '牛肉': { cal: 250, pro: 26, fat: 15, carb: 0, ca: 18, fe: 2.6, vc: 0 },
+            '鳕鱼': { cal: 82, pro: 18, fat: 0.7, carb: 0, ca: 16, fe: 0.4, vc: 0 },
+            '全麦面包': { cal: 247, pro: 13, fat: 3.4, carb: 41, ca: 107, fe: 2.5, vc: 0 },
+            '牛油果': { cal: 160, pro: 2, fat: 15, carb: 9, ca: 12, fe: 0.6, vc: 10 },
+            '坚果': { cal: 600, pro: 20, fat: 50, carb: 20, ca: 100, fe: 3, vc: 0 },
+            '煎蛋': { cal: 196, pro: 13, fat: 15, carb: 1, ca: 50, fe: 1.2, vc: 0 },
+            '烤鸡腿': { cal: 216, pro: 27, fat: 11, carb: 0, ca: 12, fe: 0.8, vc: 0 },
+            '鸡胸肉沙拉': { cal: 180, pro: 28, fat: 5, carb: 6, ca: 30, fe: 1.5, vc: 15 },
+            '水果拼盘': { cal: 55, pro: 0.8, fat: 0.3, carb: 13, ca: 20, fe: 0.3, vc: 35 },
+            '蔬菜汤': { cal: 35, pro: 2, fat: 0.5, carb: 6, ca: 40, fe: 0.8, vc: 20 },
+            '炒时蔬': { cal: 70, pro: 2.5, fat: 4, carb: 7, ca: 50, fe: 1, vc: 40 },
+            '沙拉': { cal: 80, pro: 2, fat: 5, carb: 7, ca: 30, fe: 1, vc: 25 },
+            '番茄意面': { cal: 150, pro: 5, fat: 2, carb: 28, ca: 30, fe: 1.5, vc: 15 },
+            '意面': { cal: 158, pro: 5.8, fat: 0.9, carb: 31, ca: 7, fe: 1.3, vc: 0 },
+            '豆浆': { cal: 31, pro: 3, fat: 1.6, carb: 1.2, ca: 10, fe: 0.5, vc: 0 },
+            '拿铁': { cal: 135, pro: 7, fat: 7, carb: 11, ca: 200, fe: 0.1, vc: 0 },
+            '包子': { cal: 227, pro: 8, fat: 8, carb: 30, ca: 20, fe: 1.5, vc: 0 },
+            '牛肉面': { cal: 120, pro: 7, fat: 4, carb: 15, ca: 20, fe: 1.5, vc: 0 },
+            '饺子': { cal: 240, pro: 10, fat: 10, carb: 28, ca: 25, fe: 1.8, vc: 0 },
+            '炒饭': { cal: 186, pro: 5, fat: 6, carb: 28, ca: 15, fe: 1, vc: 5 },
+            '蛋白粉': { cal: 400, pro: 80, fat: 5, carb: 10, ca: 500, fe: 5, vc: 0 },
+            '培根': { cal: 541, pro: 37, fat: 42, carb: 1.4, ca: 11, fe: 1.1, vc: 0 },
+            '炸鸡': { cal: 320, pro: 18, fat: 22, carb: 12, ca: 20, fe: 1.2, vc: 0 },
+            '薯条': { cal: 312, pro: 3.4, fat: 15, carb: 41, ca: 15, fe: 0.8, vc: 10 },
+            '肥肉': { cal: 632, pro: 9, fat: 65, carb: 0, ca: 5, fe: 0.5, vc: 0 },
+            '奶油蛋糕': { cal: 350, pro: 4, fat: 20, carb: 38, ca: 60, fe: 0.5, vc: 0 },
+            '含糖饮料': { cal: 42, pro: 0, fat: 0, carb: 11, ca: 2, fe: 0, vc: 0 },
+            '咖啡': { cal: 2, pro: 0.1, fat: 0, carb: 0, ca: 2, fe: 0, vc: 0 },
+            '浓茶': { cal: 1, pro: 0, fat: 0, carb: 0.2, ca: 5, fe: 0, vc: 0 },
+            '酒精饮品': { cal: 150, pro: 0, fat: 0, carb: 3, ca: 5, fe: 0, vc: 0 },
+            '腌制食品': { cal: 120, pro: 3, fat: 5, carb: 15, ca: 80, fe: 1, vc: 0 },
+            '辣椒': { cal: 40, pro: 2, fat: 0.4, carb: 9, ca: 18, fe: 1.1, vc: 144 }
+        };
+
+        const DEFAULT_PLAN = {
+            breakfast: [["鸡蛋","燕麦粥"],["希腊酸奶","蓝莓"],["全麦面包","牛奶"],["水果拼盘","坚果"],["煎蛋","牛奶"],["燕麦粥","牛油果"],["鸡蛋","全麦面包"]],
+            lunch: [["鸡胸肉沙拉","糙米饭"],["三文鱼","藜麦"],["牛肉面","蔬菜汤"],["藜麦","三文鱼"],["饺子","炒时蔬"],["鸡胸肉沙拉","西兰花"],["番茄意面","豆腐"]],
+            dinner: [["三文鱼","藜麦"],["豆腐","紫薯"],["炒饭","蔬菜汤"],["烤鸡腿","炒时蔬"],["鸡胸肉沙拉","糙米饭"],["番茄意面","西兰花"],["鳕鱼","水果拼盘"]]
+        };
+
+        const DEFAULT_PRESET_DATA = JSON.parse(JSON.stringify(presetData));
+
+        const DEFAULT_RECIPES = [
+            {
+                id: 'r1',
+                name: '清蒸鸡胸肉',
+                tag: '术后建议 · 高蛋白',
+                ingredients: '鸡胸肉 200g\n姜片 3片\n葱段 2根\n料酒 1勺\n盐 少许',
+                steps: '1. 鸡胸肉洗净，用刀背轻拍松软。\n2. 加姜片、葱段、料酒、盐腌制15分钟。\n3. 上锅大火蒸12-15分钟至熟透。\n4. 取出切片，可淋少许亚麻籽油。',
+                notes: '高蛋白低脂，易消化，适合术后修复期食用。',
+                createdAt: Date.now() - 100000
+            },
+            {
+                id: 'r2',
+                name: '三文鱼藜麦碗',
+                tag: '术后建议 · Omega-3',
+                ingredients: '三文鱼 150g\n藜麦 50g\n西兰花 100g\n牛油果 半个\n柠檬 少许',
+                steps: '1. 藜麦洗净，加水煮15分钟至开花。\n2. 三文鱼用盐、黑胡椒腌10分钟，少油煎至两面金黄。\n3. 西兰花焯水1分钟。\n4. 所有食材装碗，挤柠檬汁调味。',
+                notes: '富含Omega-3和优质蛋白，有助抗炎和修复。',
+                createdAt: Date.now() - 200000
+            },
+            {
+                id: 'r3',
+                name: '菠菜豆腐汤',
+                tag: '术后建议 · 补钙',
+                ingredients: '菠菜 150g\n嫩豆腐 200g\n姜丝 少许\n盐 少许\n香油 几滴',
+                steps: '1. 菠菜洗净切段，豆腐切块。\n2. 锅中加水烧开，放姜丝和豆腐煮3分钟。\n3. 加入菠菜煮1分钟。\n4. 加盐调味，滴几滴香油出锅。',
+                notes: '补钙补铁，清淡易消化。',
+                createdAt: Date.now() - 300000
+            }
+        ];
+
+        // ============ 运行时状态 ============
+        let planData = { breakfast: [[],[],[],[],[],[],[]], lunch: [[],[],[],[],[],[],[]], dinner: [[],[],[],[],[],[],[]] };
+        let activeCategory = '✅ 术后建议';
+        let selectedCell = { meal: 'breakfast', day: 0 };
+        let dragSource = null;
+        let recipes = [];
+        let editingRecipeId = null;
+        let recipeSearchText = '';
+        let dataLoaded = false;
+        let dirty = false;
+
+        let inputModalCallback = null;
+        let confirmModalCallback = null;
+
+        // ============ 元素引用 ============
+        const weekGrid = document.getElementById('weekGrid');
+        const presetListEl = document.getElementById('presetList');
+        const categoryTabsEl = document.getElementById('categoryTabs');
+        const addPresetBtn = document.getElementById('addPresetBtn');
+        const clearAllBtn = document.getElementById('clearAllBtn');
+        const resetDefaultBtn = document.getElementById('resetDefaultBtn');
+        const toastEl = document.getElementById('toast');
+
+        const recipeGrid = document.getElementById('recipeGrid');
+        const recipeSearch = document.getElementById('recipeSearch');
+        const addRecipeBtn = document.getElementById('addRecipeBtn');
+        const exportExcelBtn = document.getElementById('exportExcelBtn');
+        const exportRecipeBtn = document.getElementById('exportRecipeBtn');
+        const importRecipeBtn = document.getElementById('importRecipeBtn');
+        const recipeModal = document.getElementById('recipeModal');
+        const recipeModalTitle = document.getElementById('recipeModalTitle');
+        const recipeName = document.getElementById('recipeName');
+        const recipeTag = document.getElementById('recipeTag');
+        const recipeIngredients = document.getElementById('recipeIngredients');
+        const recipeSteps = document.getElementById('recipeSteps');
+        const recipeNotes = document.getElementById('recipeNotes');
+        const saveRecipeBtn = document.getElementById('saveRecipeBtn');
+        const cancelRecipeBtn = document.getElementById('cancelRecipeBtn');
+        const closeRecipeModalBtn = document.getElementById('closeRecipeModalBtn');
+
+        const inputModal = document.getElementById('inputModal');
+        const inputModalTitle = document.getElementById('inputModalTitle');
+        const inputModalField = document.getElementById('inputModalField');
+        const confirmInputBtn = document.getElementById('confirmInputBtn');
+        const cancelInputBtn = document.getElementById('cancelInputBtn');
+        const closeInputModalBtn = document.getElementById('closeInputModalBtn');
+
+        const confirmModal = document.getElementById('confirmModal');
+        const confirmModalText = document.getElementById('confirmModalText');
+        const okConfirmBtn = document.getElementById('okConfirmBtn');
+        const cancelConfirmBtn = document.getElementById('cancelConfirmBtn');
+        const closeConfirmModalBtn = document.getElementById('closeConfirmModalBtn');
+
+        // ============ 工具函数 ============
+        function showToast(msg) { toastEl.textContent = msg; toastEl.classList.add('show'); clearTimeout(window.toastTimer); window.toastTimer = setTimeout(() => toastEl.classList.remove('show'), 1500); }
+        function getCellElement(meal, day) { return document.querySelector(`.grid-cell[data-meal="${meal}"][data-day="${day}"]`); }
+        function updateSelectedHighlight() {
+            document.querySelectorAll('.grid-cell').forEach(c => c.classList.remove('selected'));
+            const el = getCellElement(selectedCell.meal, selectedCell.day);
+            if (el) el.classList.add('selected');
+        }
+        function markDirty() {
+            dirty = true;
+            setSyncStatus('有未保存的修改，记得点“保存到云端”', '');
+        }
+        function setSyncStatus(text, type) {
+            const el = document.getElementById('syncStatus');
+            if (!el) return;
+            el.textContent = text;
+            el.className = 'sync-status' + (type ? ' ' + type : '');
+        }
+
+        // ============ 通用输入弹窗 ============
+        function showInputModal(title, placeholder, defaultValue, callback) {
+            inputModalTitle.innerHTML = `<span>✏️</span> ${title}`;
+            inputModalField.placeholder = placeholder || '请输入...';
+            inputModalField.value = defaultValue || '';
+            inputModalCallback = callback;
+            inputModal.classList.add('show');
+            setTimeout(() => { inputModalField.focus(); inputModalField.select(); }, 100);
+        }
+        function closeInputModal() { inputModal.classList.remove('show'); inputModalCallback = null; }
+        confirmInputBtn.addEventListener('click', () => {
+            const value = inputModalField.value.trim();
+            if (inputModalCallback) inputModalCallback(value);
+            closeInputModal();
+        });
+        cancelInputBtn.addEventListener('click', closeInputModal);
+        closeInputModalBtn.addEventListener('click', closeInputModal);
+        inputModal.addEventListener('click', e => { if (e.target === inputModal) closeInputModal(); });
+        inputModalField.addEventListener('keydown', e => {
+            if (e.key === 'Enter') { e.preventDefault(); confirmInputBtn.click(); }
+            else if (e.key === 'Escape') { closeInputModal(); }
+        });
+
+        // ============ 通用确认弹窗 ============
+        function showConfirmModal(text, callback) {
+            confirmModalText.textContent = text;
+            confirmModalCallback = callback;
+            confirmModal.classList.add('show');
+        }
+        function closeConfirmModal() { confirmModal.classList.remove('show'); confirmModalCallback = null; }
+        okConfirmBtn.addEventListener('click', () => {
+            if (confirmModalCallback) confirmModalCallback();
+            closeConfirmModal();
+        });
+        cancelConfirmBtn.addEventListener('click', closeConfirmModal);
+        closeConfirmModalBtn.addEventListener('click', closeConfirmModal);
+        confirmModal.addEventListener('click', e => { if (e.target === confirmModal) closeConfirmModal(); });
+
+        // ============ 云端读写 ============
+        function buildCloudPayload() {
+            return {
+                planData: planData,
+                presetData: presetData,
+                recipes: recipes,
+                activeCategory: activeCategory
+            };
+        }
+
+        function applyCloudPayload(payload) {
+            if (!payload || typeof payload !== 'object') return false;
+
+            // 计划
+            if (payload.planData && typeof payload.planData === 'object') {
+                for (let meal of MEALS) {
+                    if (Array.isArray(payload.planData[meal]) && payload.planData[meal].length === 7) {
+                        planData[meal] = payload.planData[meal].map(arr => Array.isArray(arr) ? arr.slice() : []);
+                    }
+                }
+            }
+
+            // 预设
+            if (payload.presetData && typeof payload.presetData === 'object' && Object.keys(payload.presetData).length > 0) {
+                presetData = payload.presetData;
+            }
+
+            // 食谱
+            if (Array.isArray(payload.recipes)) {
+                recipes = payload.recipes;
+            }
+
+            // 当前分类
+            if (payload.activeCategory && presetData[payload.activeCategory]) {
+                activeCategory = payload.activeCategory;
+            } else {
+                const keys = Object.keys(presetData);
+                if (keys.length > 0) activeCategory = keys[0];
+            }
+            return true;
+        }
+
+        async function loadFromCloud() {
+            const mask = document.getElementById('loadingMask');
+            try {
+                const res = await fetch(`${API_URL}/latest`, {
+                    headers: { 'X-Access-Key': ACCESS_KEY }
+                });
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                const json = await res.json();
+                const ok = applyCloudPayload(json.record);
+                if (ok) {
+                    setSyncStatus('☁️ 已从云端加载', 'ok');
+                } else {
+                    setSyncStatus('☁️ 云端无有效数据，使用默认', '');
+                }
+            } catch (e) {
+                console.warn('云端加载失败，使用默认数据', e);
+                setSyncStatus('⚠️ 云端加载失败，使用默认数据', 'err');
+            } finally {
+                dataLoaded = true;
+                dirty = false;
+                if (mask) mask.style.display = 'none';
+            }
+        }
+
+        async function saveToCloud() {
+            if (!dataLoaded) { showToast('数据还没加载完，请稍候'); return; }
+            const btn = document.getElementById('saveBtn');
+            btn.classList.add('saving');
+            btn.textContent = '⏳ 保存中...';
+            setSyncStatus('正在保存到云端...', '');
+            try {
+                const res = await fetch(API_URL, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Access-Key': ACCESS_KEY
+                    },
+                    body: JSON.stringify(buildCloudPayload())
+                });
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                dirty = false;
+                setSyncStatus('✅ 已保存到云端', 'ok');
+                showToast('已保存到云端');
+            } catch (e) {
+                console.error('保存失败', e);
+                setSyncStatus('❌ 保存失败，请检查网络或配置', 'err');
+                showToast('保存失败：' + e.message);
+            } finally {
+                btn.classList.remove('saving');
+                btn.textContent = '☁️ 保存到云端';
+            }
+        }
+        window.saveToCloud = saveToCloud;
+
+        // ============ 营养计算 ============
+        function findNutrient(name) {
+            if (!name) return null;
+            const clean = name.trim();
+            if (NUTRIENT_DB[clean]) return NUTRIENT_DB[clean];
+            let bestKey = null;
+            for (const key in NUTRIENT_DB) {
+                if (clean.includes(key) || key.includes(clean)) {
+                    if (!bestKey || key.length > bestKey.length) bestKey = key;
+                }
+            }
+            return bestKey ? NUTRIENT_DB[bestKey] : null;
+        }
+
+        function calcDayNutrition(dayIndex) {
+            let total = { cal:0, pro:0, fat:0, carb:0, ca:0, fe:0, vc:0 };
+            for (let meal of MEALS) {
+                (planData[meal][dayIndex] || []).forEach(item => {
+                    const nut = findNutrient(item);
+                    if (nut) {
+                        total.cal += nut.cal; total.pro += nut.pro; total.fat += nut.fat;
+                        total.carb += nut.carb; total.ca += nut.ca; total.fe += nut.fe; total.vc += nut.vc;
+                    }
+                });
+            }
+            return total;
+        }
+
+        // ============ 主表格 ============
+        function buildGridSkeleton() {
+            weekGrid.innerHTML = '';
+            weekGrid.appendChild(document.createElement('div'));
+            const nutriHeader = document.createElement('div');
+            nutriHeader.className = 'header-cell';
+            nutriHeader.innerHTML = '📊 每日营养';
+            weekGrid.appendChild(nutriHeader);
+            ['🌅 早餐', '☀️ 午餐', '🌙 晚餐'].forEach(t => {
+                const h = document.createElement('div'); h.className = 'header-cell'; h.textContent = t; weekGrid.appendChild(h);
+            });
+
+            DAYS.forEach((dayName, dayIndex) => {
+                const dl = document.createElement('div'); dl.className = 'day-label'; dl.textContent = dayName; weekGrid.appendChild(dl);
+
+                const nutriCard = document.createElement('div');
+                nutriCard.className = 'day-nutri-card';
+                nutriCard.id = `nutri-day-${dayIndex}`;
+                weekGrid.appendChild(nutriCard);
+
+                MEALS.forEach(meal => {
+                    const cell = document.createElement('div');
+                    cell.className = 'grid-cell'; cell.dataset.meal = meal; cell.dataset.day = dayIndex;
+                    cell.id = `cell-${meal}-${dayIndex}`;
+                    cell.addEventListener('click', () => { selectedCell = { meal, day: dayIndex }; updateSelectedHighlight(); showToast(`选中 ${dayName} ${MEAL_LABELS[meal]}`); });
+                    cell.addEventListener('dragover', e => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; cell.classList.add('drag-over'); });
+                    cell.addEventListener('dragleave', () => cell.classList.remove('drag-over'));
+                    cell.addEventListener('drop', e => { e.preventDefault(); cell.classList.remove('drag-over'); handleDropOnCell(e, meal, dayIndex); });
+                    weekGrid.appendChild(cell);
+                });
+            });
+        }
+
+        function updateDayNutriCards() {
+            for (let day = 0; day < 7; day++) {
+                const card = document.getElementById(`nutri-day-${day}`);
+                if (!card) continue;
+                const t = calcDayNutrition(day);
+                card.innerHTML = `
+                    <div class="nutri-head">第 ${day + 1} 天</div>
+                    <div class="nutri-line"><span>热量</span><span class="v">${Math.round(t.cal)} kcal</span></div>
+                    <div class="nutri-line"><span>蛋白质</span><span class="v">${Math.round(t.pro)} g</span></div>
+                    <div class="nutri-line"><span>脂肪</span><span class="v">${Math.round(t.fat)} g</span></div>
+                    <div class="nutri-line"><span>碳水</span><span class="v">${Math.round(t.carb)} g</span></div>
+                    <div class="nutri-line"><span>钙</span><span class="v">${Math.round(t.ca)} mg</span></div>
+                    <div class="nutri-line"><span>铁</span><span class="v">${Math.round(t.fe)} mg</span></div>
+                    <div class="nutri-line"><span>维C</span><span class="v">${Math.round(t.vc)} mg</span></div>
+                `;
+            }
+        }
+
+        function renderAllCells() {
+            for (let meal of MEALS) {
+                for (let day = 0; day < 7; day++) {
+                    const cell = getCellElement(meal, day);
+                    if (!cell) continue;
+                    cell.innerHTML = '';
+                    const items = planData[meal][day] || [];
+                    const wrap = document.createElement('div'); wrap.className = 'cell-items';
+
+                    if (items.length === 0) {
+                        const eh = document.createElement('div'); eh.className = 'empty-hint'; eh.textContent = '点击选中';
+                        eh.addEventListener('click', e => { e.stopPropagation(); selectedCell = { meal, day }; updateSelectedHighlight(); showToast(`选中 ${DAYS[day]} ${MEAL_LABELS[meal]}`); });
+                        wrap.appendChild(eh);
+                    } else {
+                        items.forEach((text, idx) => {
+                            const el = document.createElement('div');
+                            el.className = 'menu-item';
+                            el.draggable = true;
+                            el.dataset.meal = meal; el.dataset.day = day; el.dataset.index = idx; el.dataset.text = text;
+                            const ts = document.createElement('span'); ts.className = 'item-text'; ts.textContent = text;
+                            const db = document.createElement('button'); db.className = 'delete-btn'; db.innerHTML = '✕';
+                            db.addEventListener('click', e => { e.stopPropagation(); planData[meal][day].splice(idx, 1); markDirty(); renderAllCells(); });
+                            el.appendChild(ts); el.appendChild(db);
+                            el.addEventListener('dragstart', handleDragStart); el.addEventListener('dragend', handleDragEnd);
+                            el.addEventListener('dragover', handleDragOver); el.addEventListener('dragleave', handleDragLeave);
+                            el.addEventListener('drop', handleDrop);
+                            wrap.appendChild(el);
+                        });
+                    }
+                    cell.appendChild(wrap);
+                }
+            }
+            updateSelectedHighlight();
+            updateDayNutriCards();
+        }
+
+        function handleDragStart(e) {
+            const item = e.target.closest('.menu-item'); if (!item) return;
+            dragSource = { meal: item.dataset.meal, day: parseInt(item.dataset.day), index: parseInt(item.dataset.index), text: item.dataset.text };
+            e.dataTransfer.setData('text/plain', dragSource.text); e.dataTransfer.effectAllowed = 'move'; item.classList.add('dragging');
+        }
+        function handleDragEnd(e) {
+            const item = e.target.closest('.menu-item'); if (item) item.classList.remove('dragging');
+            document.querySelectorAll('.menu-item.drag-over, .grid-cell.drag-over').forEach(el => el.classList.remove('drag-over'));
+            dragSource = null;
+        }
+        function handleDragOver(e) {
+            e.preventDefault(); e.dataTransfer.dropEffect = 'move';
+            const ti = e.target.closest('.menu-item'), tc = e.target.closest('.grid-cell');
+            document.querySelectorAll('.menu-item.drag-over, .grid-cell.drag-over').forEach(el => el.classList.remove('drag-over'));
+            if (ti) ti.classList.add('drag-over'); else if (tc) tc.classList.add('drag-over');
+        }
+        function handleDragLeave(e) { const ti = e.target.closest('.menu-item'), tc = e.target.closest('.grid-cell'); if (ti) ti.classList.remove('drag-over'); if (tc) tc.classList.remove('drag-over'); }
+        function handleDrop(e) {
+            e.preventDefault(); e.stopPropagation(); if (!dragSource) return;
+            const ti = e.target.closest('.menu-item');
+            if (ti) {
+                const tm = ti.dataset.meal, td = parseInt(ti.dataset.day), tidx = parseInt(ti.dataset.index);
+                if (dragSource.meal === tm && dragSource.day === td && dragSource.index === tidx) { dragSource = null; return; }
+                moveItem(dragSource, { meal: tm, day: td, index: tidx }); dragSource = null;
+            }
+        }
+        function handleDropOnCell(e, meal, day) {
+            e.preventDefault(); if (!dragSource) return;
+            const ti = planData[meal][day].length;
+            if (dragSource.meal === meal && dragSource.day === day) {
+                const sa = planData[meal][day]; if (dragSource.index === sa.length - 1 && ti === sa.length) { dragSource = null; return; }
+            }
+            moveItem(dragSource, { meal, day, index: ti }); dragSource = null;
+        }
+        function moveItem(src, dest) {
+            const sm = src.meal, sd = src.day, si = src.index, st = src.text;
+            const dm = dest.meal, dd = dest.day; let di = dest.index;
+            const sa = planData[sm][sd], da = planData[dm][dd];
+            if (!sa || sa[si] !== st) { const ri = sa.indexOf(st); if (ri === -1) return; sa.splice(ri, 1); } else { sa.splice(si, 1); }
+            if (sm === dm && sd === dd) { if (si < di) di--; if (di < 0) di = 0; if (di > da.length) di = da.length; } else { if (di > da.length) di = da.length; }
+            da.splice(di, 0, st); markDirty(); renderAllCells();
+        }
+
+        function renderCategoryTabs() {
+            categoryTabsEl.innerHTML = '';
+            const cats = Object.keys(presetData);
+            if (cats.length === 0) { activeCategory = null; return; }
+            if (!activeCategory || !presetData[activeCategory]) activeCategory = cats[0];
+            cats.forEach(cat => {
+                const tab = document.createElement('div');
+                let cls = 'category-tab';
+                if (cat === activeCategory) cls += ' active';
+                if (cat.includes('建议')) cls += ' recommend';
+                if (cat.includes('避免')) cls += ' avoid';
+                tab.className = cls;
+                const ns = document.createElement('span'); ns.textContent = cat;
+                const cs = document.createElement('span'); cs.className = 'tab-count'; cs.textContent = presetData[cat].length;
+                const db = document.createElement('button'); db.className = 'tab-del'; db.innerHTML = '✕';
+                db.addEventListener('click', e => {
+                    e.stopPropagation();
+                    if (Object.keys(presetData).length <= 1) { showToast('至少保留一个分类'); return; }
+                    showConfirmModal(`确定删除分类「${cat}」及其中所有预设吗？`, () => {
+                        delete presetData[cat];
+                        if (activeCategory === cat) activeCategory = Object.keys(presetData)[0];
+                        markDirty();
+                        renderCategoryTabs(); renderPresetList();
+                    });
+                });
+                tab.appendChild(ns); tab.appendChild(cs); tab.appendChild(db);
+                tab.addEventListener('click', e => { if (e.target.closest('.tab-del')) return; activeCategory = cat; markDirty(); renderCategoryTabs(); renderPresetList(); });
+                categoryTabsEl.appendChild(tab);
+            });
+            const addTab = document.createElement('div'); addTab.className = 'category-tab'; addTab.style.cssText = 'border-style:dashed;color:#64748b;'; addTab.textContent = '+ 分类';
+            addTab.addEventListener('click', () => {
+                showInputModal('新建分类', '输入分类名称，例如：汤品', '', (value) => {
+                    if (!value) return;
+                    if (presetData[value]) { showToast('分类已存在'); return; }
+                    presetData[value] = [];
+                    activeCategory = value;
+                    markDirty();
+                    renderCategoryTabs(); renderPresetList();
+                    showToast(`已添加分类「${value}」`);
+                });
+            });
+            categoryTabsEl.appendChild(addTab);
+        }
+
+        function renderPresetList() {
+            presetListEl.innerHTML = '';
+            if (!activeCategory || !presetData[activeCategory]) { presetListEl.innerHTML = '<div class="preset-empty">暂无分类</div>'; return; }
+            const items = presetData[activeCategory];
+            if (items.length === 0) { presetListEl.innerHTML = '<div class="preset-empty">该分类暂无预设</div>'; return; }
+            items.forEach((text, idx) => {
+                const item = document.createElement('div'); item.className = 'preset-item';
+                const ts = document.createElement('span'); ts.className = 'preset-text'; ts.innerHTML = `${text} <span>+</span>`;
+                ts.addEventListener('click', () => {
+                    const { meal, day } = selectedCell; planData[meal][day].push(text); markDirty(); renderAllCells();
+                    showToast(`已添加「${text}」到 ${DAYS[day]} ${MEAL_LABELS[meal]}`);
+                });
+                const db = document.createElement('button'); db.className = 'delete-preset-btn'; db.innerHTML = '✕';
+                db.addEventListener('click', e => { e.stopPropagation(); presetData[activeCategory].splice(idx, 1); markDirty(); renderCategoryTabs(); renderPresetList(); });
+                item.appendChild(ts); item.appendChild(db); presetListEl.appendChild(item);
+            });
+        }
+
+        addPresetBtn.addEventListener('click', () => {
+            if (!activeCategory || !presetData[activeCategory]) { showToast('请先选择分类'); return; }
+            showInputModal(`添加到「${activeCategory}」`, '输入菜品名称，例如：番茄牛腩', '', (value) => {
+                if (!value) return;
+                if (presetData[activeCategory].includes(value)) { showToast('该菜品已存在'); return; }
+                presetData[activeCategory].push(value);
+                markDirty();
+                renderCategoryTabs(); renderPresetList();
+                showToast(`已添加「${value}」到「${activeCategory}」`);
+            });
+        });
+
+        // ============ 食谱集 ============
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function renderRecipes() {
+            const f = recipeSearchText.trim().toLowerCase();
+            const list = recipes.filter(r => {
+                if (!f) return true;
+                return (r.name || '').toLowerCase().includes(f) ||
+                       (r.tag || '').toLowerCase().includes(f) ||
+                       (r.ingredients || '').toLowerCase().includes(f) ||
+                       (r.steps || '').toLowerCase().includes(f);
+            });
+
+            if (list.length === 0) {
+                recipeGrid.innerHTML = `
+                    <div class="recipe-empty">
+                        <span class="big-icon">📭</span>
+                        ${recipes.length === 0 ? '还没有食谱，点击右上角“+ 新建食谱”开始记录吧' : '没有找到匹配的食谱'}
+                    </div>
+                `;
+                return;
+            }
+
+            list.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+
+            recipeGrid.innerHTML = '';
+            list.forEach(r => {
+                const card = document.createElement('div');
+                card.className = 'recipe-card';
+                card.innerHTML = `
+                    <div class="recipe-title">
+                        <span class="title-text">${escapeHtml(r.name || '未命名食谱')}</span>
+                        <div class="recipe-card-actions">
+                            <button class="icon-btn edit" data-id="${r.id}" title="编辑">✏️</button>
+                            <button class="icon-btn delete" data-id="${r.id}" title="删除">🗑️</button>
+                        </div>
+                    </div>
+                    ${r.tag ? `<span class="recipe-tag">${escapeHtml(r.tag)}</span>` : ''}
+                    ${r.ingredients ? `<div class="recipe-field ingredients"><strong>食材：</strong>${escapeHtml(r.ingredients).replace(/\n/g, '<br>')}</div>` : ''}
+                    ${r.steps ? `<div class="recipe-field steps"><strong>做法：</strong>${escapeHtml(r.steps).replace(/\n/g, '<br>')}</div>` : ''}
+                    ${r.notes ? `<div class="recipe-notes">💡 ${escapeHtml(r.notes)}</div>` : ''}
+                `;
+                recipeGrid.appendChild(card);
+            });
+
+            recipeGrid.querySelectorAll('.icon-btn.edit').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const id = btn.dataset.id;
+                    const recipe = recipes.find(x => x.id === id);
+                    if (recipe) openRecipeModal(recipe);
+                });
+            });
+            recipeGrid.querySelectorAll('.icon-btn.delete').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const id = btn.dataset.id;
+                    const recipe = recipes.find(x => x.id === id);
+                    if (!recipe) return;
+                    showConfirmModal(`确定删除食谱「${recipe.name}」吗？`, () => {
+                        recipes = recipes.filter(x => x.id !== id);
+                        markDirty();
+                        renderRecipes();
+                        showToast('已删除食谱，记得保存到云端');
+                    });
+                });
+            });
+        }
+
+        function openRecipeModal(recipe = null) {
+            editingRecipeId = recipe ? recipe.id : null;
+            if (recipe) {
+                recipeModalTitle.innerHTML = '<span>✏️</span> 编辑食谱';
+                recipeName.value = recipe.name || '';
+                recipeTag.value = recipe.tag || '';
+                recipeIngredients.value = recipe.ingredients || '';
+                recipeSteps.value = recipe.steps || '';
+                recipeNotes.value = recipe.notes || '';
+            } else {
+                recipeModalTitle.innerHTML = '<span>📝</span> 新建食谱';
+                recipeName.value = '';
+                recipeTag.value = '';
+                recipeIngredients.value = '';
+                recipeSteps.value = '';
+                recipeNotes.value = '';
+            }
+            recipeModal.classList.add('show');
+            setTimeout(() => recipeName.focus(), 100);
+        }
+
+        function closeRecipeModal() { recipeModal.classList.remove('show'); editingRecipeId = null; }
+
+        function saveRecipe() {
+            const name = recipeName.value.trim();
+            if (!name) { showToast('请填写食谱名称'); recipeName.focus(); return; }
+
+            const data = {
+                name,
+                tag: recipeTag.value.trim(),
+                ingredients: recipeIngredients.value.trim(),
+                steps: recipeSteps.value.trim(),
+                notes: recipeNotes.value.trim()
+            };
+
+            if (editingRecipeId) {
+                const idx = recipes.findIndex(x => x.id === editingRecipeId);
+                if (idx !== -1) recipes[idx] = { ...recipes[idx], ...data };
+                showToast('已更新食谱');
+            } else {
+                recipes.push({
+                    id: 'r' + Date.now() + Math.random().toString(36).slice(2, 8),
+                    ...data,
+                    createdAt: Date.now()
+                });
+                showToast('已保存食谱');
+            }
+
+            markDirty();
+            renderRecipes();
+            closeRecipeModal();
+        }
+
+        addRecipeBtn.addEventListener('click', () => openRecipeModal(null));
+        saveRecipeBtn.addEventListener('click', saveRecipe);
+        cancelRecipeBtn.addEventListener('click', closeRecipeModal);
+        closeRecipeModalBtn.addEventListener('click', closeRecipeModal);
+        recipeModal.addEventListener('click', e => { if (e.target === recipeModal) closeRecipeModal(); });
+
+        recipeSearch.addEventListener('input', e => { recipeSearchText = e.target.value; renderRecipes(); });
+
+        // ============ 导出 Excel ============
+        exportExcelBtn.addEventListener('click', () => {
+            if (recipes.length === 0) { showToast('没有食谱可导出'); return; }
+            try {
+                const rows = recipes
+                    .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))
+                    .map((r, i) => ({
+                        '序号': i + 1,
+                        '食谱名称': r.name || '',
+                        '标签/分类': r.tag || '',
+                        '食材': r.ingredients || '',
+                        '做法步骤': r.steps || '',
+                        '备注/营养提示': r.notes || '',
+                        '创建时间': r.createdAt ? new Date(r.createdAt).toLocaleString('zh-CN') : ''
+                    }));
+
+                const ws = XLSX.utils.json_to_sheet(rows, {
+                    header: ['序号', '食谱名称', '标签/分类', '食材', '做法步骤', '备注/营养提示', '创建时间']
+                });
+
+                ws['!cols'] = [
+                    { wch: 6 }, { wch: 20 }, { wch: 20 }, { wch: 40 }, { wch: 60 }, { wch: 30 }, { wch: 20 }
+                ];
+
+                const range = XLSX.utils.decode_range(ws['!ref']);
+                for (let R = range.s.r; R <= range.e.r; ++R) {
+                    for (let C = range.s.c; C <= range.e.c; ++C) {
+                        const addr = XLSX.utils.encode_cell({ r: R, c: C });
+                        const cell = ws[addr];
+                        if (cell) cell.s = { alignment: { wrapText: true, vertical: 'top' } };
+                    }
+                }
+
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, '食谱集');
+
+                try {
+                    const planRows = [];
+                    DAYS.forEach((dayName, dayIdx) => {
+                        MEALS.forEach(meal => {
+                            const items = planData[meal][dayIdx] || [];
+                            if (items.length > 0) {
+                                planRows.push({ '星期': dayName, '餐次': MEAL_LABELS[meal], '菜品': items.join('、') });
+                            }
+                        });
+                    });
+                    if (planRows.length > 0) {
+                        const ws2 = XLSX.utils.json_to_sheet(planRows);
+                        ws2['!cols'] = [{ wch: 10 }, { wch: 10 }, { wch: 60 }];
+                        XLSX.utils.book_append_sheet(wb, ws2, '本周饮食计划');
+                    }
+                } catch (e) { console.warn('附加计划失败', e); }
+
+                const fileName = `食谱集_${new Date().toISOString().slice(0, 10)}.xlsx`;
+                XLSX.writeFile(wb, fileName);
+                showToast('已导出 Excel 文件');
+            } catch (err) {
+                console.error(err);
+                showToast('导出失败：' + err.message);
+            }
+        });
+
+        // ============ 导出/导入 JSON ============
+        exportRecipeBtn.addEventListener('click', () => {
+            const dataStr = JSON.stringify(recipes, null, 2);
+            const blob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `食谱集_${new Date().toISOString().slice(0,10)}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+            showToast('已导出 JSON 文件');
+        });
+
+        importRecipeBtn.addEventListener('click', () => {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.json,application/json';
+            input.addEventListener('change', e => {
+                const file = e.target.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = ev => {
+                    try {
+                        const data = JSON.parse(ev.target.result);
+                        if (!Array.isArray(data)) throw new Error('格式不正确');
+                        const existingIds = new Set(recipes.map(r => r.id));
+                        const existingNames = new Set(recipes.map(r => r.name));
+                        let added = 0;
+                        data.forEach(item => {
+                            if (!item.name) return;
+                            if (existingIds.has(item.id) || existingNames.has(item.name)) return;
+                            recipes.push({
+                                id: item.id || ('r' + Date.now() + Math.random().toString(36).slice(2, 8)),
+                                name: item.name,
+                                tag: item.tag || '',
+                                ingredients: item.ingredients || '',
+                                steps: item.steps || '',
+                                notes: item.notes || '',
+                                createdAt: item.createdAt || Date.now()
+                            });
+                            added++;
+                        });
+                        markDirty();
+                        renderRecipes();
+                        showToast(`成功导入 ${added} 条食谱，记得保存到云端`);
+                    } catch (err) {
+                        showToast('导入失败：文件格式不正确');
+                    }
+                };
+                reader.readAsText(file);
+            });
+            input.click();
+        });
+
+        // ============ 重置 / 清空 ============
+        function resetToDefault() {
+            planData = { breakfast: [[],[],[],[],[],[],[]], lunch: [[],[],[],[],[],[],[]], dinner: [[],[],[],[],[],[],[]] };
+            for (let meal of MEALS) for (let day = 0; day < 7; day++) planData[meal][day] = [...DEFAULT_PLAN[meal][day]];
+            presetData = JSON.parse(JSON.stringify(DEFAULT_PRESET_DATA));
+            activeCategory = '✅ 术后建议';
+            selectedCell = { meal: 'breakfast', day: 0 };
+            markDirty();
+            renderAllCells(); renderCategoryTabs(); renderPresetList();
+            showToast('已恢复示例，记得保存到云端');
+        }
+
+        function clearAll() {
+            for (let meal of MEALS) for (let day = 0; day < 7; day++) planData[meal][day] = [];
+            selectedCell = { meal: 'breakfast', day: 0 };
+            markDirty();
+            renderAllCells(); showToast('已清空，记得保存到云端');
+        }
+
+        // ============ 初始化 ============
+        async function init() {
+            buildGridSkeleton();
+
+            // 先用默认值铺满，避免加载前空白
+            for (let meal of MEALS) for (let day = 0; day < 7; day++) planData[meal][day] = [...DEFAULT_PLAN[meal][day]];
+            recipes = JSON.parse(JSON.stringify(DEFAULT_RECIPES));
+
+            await loadFromCloud();
+
+            renderAllCells();
+            renderCategoryTabs();
+            renderPresetList();
+            selectedCell = { meal: 'breakfast', day: 0 };
+            updateSelectedHighlight();
+            renderRecipes();
+
+            clearAllBtn.addEventListener('click', clearAll);
+            resetDefaultBtn.addEventListener('click', resetToDefault);
+            document.addEventListener('dragover', e => e.preventDefault());
+            document.addEventListener('drop', e => e.preventDefault());
+        }
+        init();
+    })();
+</script>
+</body>
+</html>
